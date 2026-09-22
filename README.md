@@ -1,57 +1,57 @@
-# Sample Hardhat 3 Project (`mocha` and `ethers`)
+# 🔐 Threshold dApp
 
-This project showcases a Hardhat 3 project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+A decentralized application (dApp) that combines **Shamir's Secret Sharing (SSS)** with an Ethereum smart contract on the **Sepolia testnet** to achieve secure, threshold-based message coordination and decentralized auditing.
 
-To learn more about Hardhat 3, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3](https://hardhat.org/hardhat3-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+---
 
-## Project Overview
+## 🌟 Key Features
 
-This example project includes:
+* **Client-Side Secret Splitting (SSS):** Splits confidential text messages into mathematical shares using Shamir's Secret Sharing scheme (`secrets.js-grempe`) entirely in the browser. The raw shares never travel to the blockchain, preserving full privacy.
+* **Smart Contract Coordination:** Utilizes a Solidity smart contract (`ThresholdRegistry.sol`) deployed on Sepolia to manage message metadata, authorization lists, and threshold rules.
+* **Role-Based Access Control:** Enforces strict guardian verification via smart contract modifiers (`onlyGuardian`) and MetaMask authentication, preventing unauthorized access or double voting.
+* **Transparent Audit Trail:** Emits custom blockchain events (`MessageRegistered`, `GuardianApproved`, `ThresholdReached`) to maintain an immutable, verifiable history of guardian participation.
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+---
 
-## Usage
+## 📂 Project Architecture
 
-### Running Tests
+The project follows a hybrid decentralized architecture:
 
-To run all the tests in the project, execute the following command:
+1. **Smart Contract Layer (`ThresholdRegistry.sol`):**
+   * Acts as an immutable, decentralized coordinator and judge.
+   * Stores message metadata (`MessageMeta` struct): owner address, message hash (`bytes32`), threshold parameter (M), guardian addresses, and approval counts.
+   * Implements nested mappings (`hasSubmittedShare`) to prevent duplicate voting from the same guardian.
+   * Automatically updates state (`isThresholdReached = true`) once the required number of guardian approvals is met.
 
-```shell
-npx hardhat test
-```
+2. **Frontend Interface (`React` & `App.jsx`):**
+   * Acts as the client-side bridge between the user and the blockchain.
+   * Integrates **Ethers.js** (`BrowserProvider`) for seamless MetaMask wallet connection and transaction signing.
+   * Provides an intuitive interface for secret splitting, contract interaction, status monitoring, and secret reconstruction.
 
-You can also selectively run the Solidity or `mocha` tests:
+---
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
-```
+## 🛠️ Tech Stack
 
-### Make a deployment to Sepolia
+* **Smart Contract:** Solidity (^0.8.28), Remix IDE / Hardhat, Ethereum Sepolia Testnet
+* **Frontend:** React, JavaScript (ES6+), HTML5, CSS3
+* **Web3 Library:** Ethers.js v6
+* **Cryptography:** Shamir's Secret Sharing (`secrets.js-grempe`)
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+---
 
-To run the deployment to a local chain:
+## ⚙️ Smart Contract Functions (`ThresholdRegistry.sol`)
 
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
-```
+* `registerMessage(string _messageId, bytes32 _messageHash, uint256 _thresholdM, address[] _guardians)`: Registers a new message, sets the threshold rule, and defines authorized guardians.
+* `submitGuardianApproval(string _messageId)`: Allows an authorized guardian to cast their vote/approval. Automatically checks eligibility and evaluates if the threshold has been reached.
+* `getGuardians(string _messageId)`: View function to fetch the exact list of authorized guardians directly from the blockchain.
+* `isThresholdMet(string _messageId)`: View function to check whether the required threshold of approvals has been reached.
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+---
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+## 🚀 Workflow
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+1. **Setup & Split:** The owner inputs a secret message and parameters ($n$ total shares, $k$ threshold) to generate shares locally.
+2. **Registration:** The owner registers the message hash, threshold, and guardian address array onto the Sepolia smart contract via MetaMask.
+3. **Approval:** Designated guardians connect their wallets through the frontend dApp and submit their approval on-chain.
+4. **Decryption:** Once the smart contract verifies that the approval count meets or exceeds the threshold ($M$), the threshold status turns `true`, enabling authorized participants to combine their shares and reconstruct the secret.
 
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
-
-After setting the variable, you can run the deployment with the Sepolia network:
-
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
